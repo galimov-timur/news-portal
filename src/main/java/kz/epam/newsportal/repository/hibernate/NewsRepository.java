@@ -1,6 +1,5 @@
 package kz.epam.newsportal.repository.hibernate;
 
-import kz.epam.newsportal.exception.NotFoundException;
 import kz.epam.newsportal.model.News;
 import kz.epam.newsportal.repository.INewsRepository;
 import org.hibernate.*;
@@ -44,7 +43,7 @@ public class NewsRepository implements INewsRepository {
     }
 
     @Override
-    public void delete(News newsItem) throws NotFoundException {
+    public void delete(News newsItem) {
         Session session = sessionFactory.getCurrentSession();
         session.delete(newsItem);
     }

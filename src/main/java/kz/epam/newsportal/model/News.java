@@ -24,8 +24,7 @@ public class News implements Serializable {
 
     public News() {}
 
-    public News(long id, String title, ZonedDateTime created, String brief, String content) {
-        this.id = id;
+    public News(String title, ZonedDateTime created, String brief, String content) {
         this.title = title;
         this.created = created;
         this.brief = brief;

@@ -27,6 +27,7 @@ public class NewsService implements INewsService {
     private static final String PROPERTY_NAME_CONTENT = "News content";
 
     private static final String NEWS_NOT_FOUND_MSG = "News not found";
+    private static final long ZERO_VALUE = 0;
 
     @Autowired
     public void setNewsRepository(INewsRepository newsRepository) {
@@ -39,12 +40,15 @@ public class NewsService implements INewsService {
 
     @Override
     @Transactional
-    public long addNewsItem(News newsItem) throws InvalidPropertyFormatException {
-
-        validationUtility.validateStringProperty(newsItem.getTitle(), MAX_TITLE_LENGTH, PROPERTY_NAME_TITLE);
-        validationUtility.validateStringProperty(newsItem.getBrief(), MAX_BRIEF_LENGTH, PROPERTY_NAME_BRIEF);
-        validationUtility.validateStringProperty(newsItem.getContent(), MAX_CONTENT_LENGTH, PROPERTY_NAME_CONTENT);
-
+    public long addNewsItem(News newsItem) {
+        try {
+            validationUtility.validateStringProperty(newsItem.getTitle(), MAX_TITLE_LENGTH, PROPERTY_NAME_TITLE);
+            validationUtility.validateStringProperty(newsItem.getBrief(), MAX_BRIEF_LENGTH, PROPERTY_NAME_BRIEF);
+            validationUtility.validateStringProperty(newsItem.getContent(), MAX_CONTENT_LENGTH, PROPERTY_NAME_CONTENT);
+        } catch(InvalidPropertyFormatException e) {
+            e.printStackTrace();
+            return ZERO_VALUE;
+        }
         ZonedDateTime creationDate = ZonedDateTime.now();
         newsItem.setCreated(creationDate);
         return this.newsRepository.save(newsItem);
@@ -52,41 +56,27 @@ public class NewsService implements INewsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<News> getNewsList() throws NotFoundException {
+    public List<News> getNewsList() {
         List<News> newsList = this.newsRepository.findAll();
-        if(newsList.isEmpty()) {
-            throw new NotFoundException(NEWS_NOT_FOUND_MSG);
-        }
         return newsList;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public News getNewsItemById(long id) throws NotFoundException {
+    public News getNewsItemById(long id) {
         News newsItem = this.newsRepository.findById(id);
-        if(newsItem == null) {
-            throw new NotFoundException(NEWS_NOT_FOUND_MSG);
-        }
         return newsItem;
     }
 
     @Override
     @Transactional
-    public void deleteNewsItem(long id) throws NotFoundException {
-        News newsItem = this.newsRepository.findById(id);
-        if(newsItem == null) {
-            throw new NotFoundException(NEWS_NOT_FOUND_MSG);
-        }
-        this.newsRepository.delete(newsItem);
+    public void deleteNewsItem(News news) {
+        this.newsRepository.delete(news);
     }
 
     @Override
     @Transactional
-    public void updateNewsItem(News updatedNews) throws NotFoundException {
-        News storedNews = this.newsRepository.findById(updatedNews.getId());
-        if(storedNews == null) {
-            throw new NotFoundException(NEWS_NOT_FOUND_MSG);
-        }
-        newsRepository.update(updatedNews);
+    public void updateNewsItem(News updatedNews) {
+        this.newsRepository.update(updatedNews);
     }
 }

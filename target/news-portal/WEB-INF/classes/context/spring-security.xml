@@ -1,0 +1,31 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/security
+    http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <http create-session="stateless" auto-config="true">
+        <csrf disabled="true"/>
+        <http-basic entry-point-ref="newsportalAuthenticationEntryPoint" />
+        <custom-filter before="BASIC_AUTH_FILTER" ref="tokenAuthenticationFilter" />
+        <intercept-url pattern="/authenticate" access="permitAll()" method="POST" />
+        <intercept-url pattern="/users" access="permitAll()" method="POST" />
+        <intercept-url pattern="/news" access="permitAll()" method="GET" />
+        <intercept-url pattern="/news/*" access="permitAll()" method="GET" />
+        <intercept-url pattern="/language" access="permitAll()" />
+        <intercept-url pattern="/**" access="isAuthenticated()" />
+    </http>
+
+    <authentication-manager id="authenticationManager">
+        <authentication-provider user-service-ref="userService">
+            <password-encoder ref="passwordEncoder" />
+        </authentication-provider>
+    </authentication-manager>
+
+    <beans:bean class="kz.epam.newsportal.util.NewsportalAuthenticationEntryPoint" id="newsportalAuthenticationEntryPoint"/>
+    <beans:bean class="kz.epam.newsportal.filter.TokenAuthenticationFilter" id="tokenAuthenticationFilter"/>
+    <beans:bean class="kz.epam.newsportal.service.concrete.UserService" id="userService"/>
+    <beans:bean class="org.springframework.security.crypto.password.NoOpPasswordEncoder" id="passwordEncoder"/>
+</beans:beans>

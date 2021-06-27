@@ -9,6 +9,6 @@ public interface INewsRepository {
     List<News> findAll();
     News findById(long id);
     long save(News newsItem);
-    void delete(News newsItem) throws NotFoundException;
+    void delete(News newsItem);
     void update(News newsItem);
 }
