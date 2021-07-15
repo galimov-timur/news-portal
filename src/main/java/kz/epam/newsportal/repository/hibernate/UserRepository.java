@@ -10,13 +10,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public class UserRepository implements IUserRepository {
 
     private static final String HQL_USER_BY_EMAIL = "SELECT u FROM User u JOIN FETCH u.roles ur WHERE u.email = :email";
     private static final String HQL_USER_BY_ID = "SELECT u FROM User u JOIN FETCH u.roles ur WHERE u.id=:id";
-    private static final String HQL_FIND_ALL_USERS = "SELECT u FROM User u JOIN FETCH u.roles";
+    private static final String HQL_FIND_ALL_USERS = "SELECT DISTINCT u FROM User u JOIN FETCH u.roles";
+
+    private static final String EXCEPTION_USER_NOT_FOUND = "User is not found";
 
     private static final String EMAIL_PARAM = "email";
     private static final String ID_PARAM = "id";
@@ -66,21 +69,21 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public void update(User updatedUser, long id) {
+    public void update(User updatedUser) throws NotFoundException {
         Session session = sessionFactory.getCurrentSession();
-        User user = session.get(User.class, id);
-        user.setUsername(updatedUser.getUsername());
-        user.setEmail(updatedUser.getEmail());
-        user.setPassword(updatedUser.getPassword());
+        User storedUser = session.get(User.class, updatedUser.getId());
 
-        for(Role role : user.getRoles()) {
-            session.delete(role);
+        if(storedUser == null) {
+            throw new NotFoundException(EXCEPTION_USER_NOT_FOUND);
         }
+
+        storedUser.setUsername(updatedUser.getUsername());
+        storedUser.setEmail(updatedUser.getEmail());
+        storedUser.setPassword(updatedUser.getPassword());
+
         for(Role role: updatedUser.getRoles()) {
-            role.setUser(user);
+            storedUser.addRole(role);
         }
-
-        user.setRoles(updatedUser.getRoles());
-        session.update(user);
+        session.update(storedUser);
     }
 }

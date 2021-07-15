@@ -3,6 +3,7 @@ package kz.epam.newsportal.service.concrete;
 import kz.epam.newsportal.exception.*;
 import kz.epam.newsportal.model.News;
 import kz.epam.newsportal.repository.INewsRepository;
+import kz.epam.newsportal.repository.hibernate.NewsRepository;
 import kz.epam.newsportal.service.INewsService;
 import kz.epam.newsportal.util.ValidationUtility;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,13 @@ public class NewsService implements INewsService {
     private static final String PROPERTY_NAME_BRIEF = "News brief";
     private static final String PROPERTY_NAME_CONTENT = "News content";
 
-    private static final String NEWS_NOT_FOUND_MSG = "News not found";
     private static final long ZERO_VALUE = 0;
 
     @Autowired
-    public void setNewsRepository(INewsRepository newsRepository) {
+    public NewsService(INewsRepository newsRepository) {
         this.newsRepository = newsRepository;
     }
+
     @Autowired
     public void setFormUtil(ValidationUtility validationUtility) {
         this.validationUtility = validationUtility;

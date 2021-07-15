@@ -12,5 +12,5 @@ public interface IUserRepository {
     long save(User user);
     User findById(long id);
     void delete(User user);
-    void update(User user, long id);
+    void update(User user) throws NotFoundException;
 }

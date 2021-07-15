@@ -8,13 +8,10 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
-import java.net.URI;
 import java.util.List;
 
 @Controller
 public class NewsController {
-
-    private static final String DELETED_MSG = "Deleted successfully";
 
     private INewsService newsService;
 

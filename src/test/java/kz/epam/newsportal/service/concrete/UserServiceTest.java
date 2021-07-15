@@ -1,11 +1,11 @@
 package kz.epam.newsportal.service.concrete;
 
-import kz.epam.newsportal.exception.NotFoundException;
-import kz.epam.newsportal.exception.UserAlreadyExistException;
-import kz.epam.newsportal.model.Role;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import kz.epam.newsportal.model.User;
 import kz.epam.newsportal.repository.IUserRepository;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,24 +23,32 @@ import java.util.Optional;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class UserServiceTest {
-
-    private static final String ROLE_USER = "USER_ROLE";
-
     @Mock
     IUserRepository userRepository;
     @InjectMocks
     UserService userService;
 
+    User testUser;
+
+    @BeforeEach
+    void setup() {
+        long id = 1;
+        testUser = new User("test@test.ru", "pass", "Test", true, true, true, true);
+        testUser.setId(id);
+    }
+
     @Test
     void testLoadUserByUsername() {
+        // given
         String email = "test@test.ru";
-        User storedUser = new User(email, "pass", "Test", true, true, true, true);
-        Mockito.when(userRepository.findUserByEmail(email)).thenReturn(Optional.of(storedUser));
-        User userDetails = (User) userService.loadUserByUsername(email);
-        Assertions.assertNotNull(userDetails);
-        Assertions.assertTrue(userDetails.getUsername().equals("Test"));
-        Assertions.assertTrue(userDetails.getPassword().equals("pass"));
-        Assertions.assertTrue(userDetails.getEmail().equals(email));
+        Mockito.when(userRepository.findUserByEmail(email)).thenReturn(Optional.of(testUser));
+        // when
+        User user = (User) userService.loadUserByUsername(email);
+        // then
+        assertNotNull(user);
+        assertTrue(user.getUsername().equals("Test"));
+        assertTrue(user.getPassword().equals("pass"));
+        assertTrue(user.getEmail().equals(email));
     }
 
     @Test
@@ -48,126 +56,63 @@ public class UserServiceTest {
         String email = "test@test.ru";
         User storedUser = null;
         Mockito.when(userRepository.findUserByEmail(email)).thenReturn(Optional.ofNullable(storedUser));
-        Assertions.assertThrows(UsernameNotFoundException.class, () -> userService.loadUserByUsername(email));
+        assertThrows(UsernameNotFoundException.class, () -> userService.loadUserByUsername(email));
     }
 
     @Test
     void testAddUser() {
-        long expectedId = 5;
+        // given
         Optional<User> noUser = Optional.ofNullable(null);
-        Role userRole = new Role(ROLE_USER);
-        User user = new User("test@test.ru", "pass", "Test", true,true,true,true);
-        userRole.setUser(user);
-        user.addRole(userRole);
-
-        Mockito.when(userRepository.findUserByEmail(user.getEmail())).thenReturn(noUser);
-        Mockito.when(userRepository.save(user)).thenReturn(expectedId);
-
-        try {
-            long savedUserId = userService.addUser(user);
-            Assertions.assertTrue(expectedId == savedUserId);
-        } catch(Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    @Test
-    void testAddUserThrowsUserAlreadyExistException() {
-        User user = new User("test@test.ru", "pass", "Test", true,true,true,true);
-        Mockito.when(userRepository.findUserByEmail(user.getEmail())).thenReturn(Optional.of(user));
-        Assertions.assertThrows(UserAlreadyExistException.class, () -> userService.addUser(user));
+        Mockito.when(userRepository.findUserByEmail(testUser.getEmail())).thenReturn(noUser);
+        Mockito.when(userRepository.save(testUser)).thenReturn(testUser.getId());
+        // when
+        long savedUserId = userService.addUser(testUser);
+        // then
+        assertTrue(testUser.getId() == savedUserId);
     }
 
     @Test
     void testGetUsersList() {
-        String email1 = "test1@test.ru";
-        String email2 = "test2@test.ru";
-        User user1 = new User(email1, "pass1", "Test1", true,true,true,true);
-        User user2 = new User(email2, "pass2", "Test2", true,true,true,true);
-        Mockito.when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
-        try {
-            List<User> usersList = userService.getUsersList();
-            Assertions.assertTrue(usersList.size() == 2);
-            Assertions.assertTrue(usersList.get(0).getEmail().equals(email1));
-            Assertions.assertTrue(usersList.get(1).getEmail().equals(email2));
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void testGetUsersListThrowsNotFoundException() {
-        Mockito.when(userRepository.findAll()).thenReturn(Arrays.asList());
-        Assertions.assertThrows(NotFoundException.class, () -> userService.getUsersList());
+        // given
+        User testUser2 = new User("test2@test.ru", "pass2", "Test2", true,true,true,true);
+        Mockito.when(userRepository.findAll()).thenReturn(Arrays.asList(testUser, testUser2));
+        // when
+        List<User> usersList = userService.getUsersList();
+        // then
+        assertTrue(usersList.size() == 2);
+        assertTrue(usersList.get(0).getEmail().equals(testUser.getEmail()));
+        assertTrue(usersList.get(1).getEmail().equals(testUser2.getEmail()));
     }
 
     @Test
     void testGetUserById() {
-        long searchedUserId = 7;
-        User storedUser = new User("test@test.ru", "pass", "Test", true,true,true,true);
-        storedUser.setId(searchedUserId);
-        Mockito.when(userRepository.findById(searchedUserId)).thenReturn(storedUser);
-
-        try {
-            User resultUser = userService.getUserById(searchedUserId);
-            Assertions.assertTrue(searchedUserId == resultUser.getId());
-            Assertions.assertTrue(resultUser.getEmail().equals(storedUser.getEmail()));
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void testGetUserByIdThrowsNotFoundException() {
-        long searchedUserId = 7;
-        Mockito.when(userRepository.findById(searchedUserId)).thenReturn(null);
-        Assertions.assertThrows(NotFoundException.class, ()->userService.getUserById(searchedUserId));
+        // given
+        long searchedUserId = 1;
+        Mockito.when(userRepository.findById(searchedUserId)).thenReturn(testUser);
+        // when
+        User resultUser = userService.getUserById(searchedUserId);
+        // then
+        assertTrue(searchedUserId == resultUser.getId());
+        assertTrue(resultUser.getEmail().equals(testUser.getEmail()));
     }
 
     @Test
     void testDeleteUser() {
-        long searchedUserId = 7;
-        User storedUser = new User("test@test.ru", "pass", "Test", true,true,true,true);
-        try {
-            Mockito.when(userRepository.findById(searchedUserId)).thenReturn(storedUser);
-            userService.deleteUser(searchedUserId);
-            Mockito.verify(userRepository).delete(storedUser);
-        } catch(Exception ex) {
-            ex.printStackTrace();
-        }
+        // given
+        User userToDelete = testUser;
+        // when
+        userService.deleteUser(userToDelete);
+        // then
+        verify(userRepository).delete(userToDelete);
     }
 
     @Test
-    void testDeleteUserThrowsNotFoundException() {
-        long searchedUserId = 7;
-        Mockito.when(userRepository.findById(searchedUserId)).thenReturn(null);
-        Assertions.assertThrows(NotFoundException.class, () -> userService.getUserById(searchedUserId));
+    void testUpdateUser() throws Exception {
+        // given
+        User updatedUser = testUser;
+        // when
+        userService.updateUser(updatedUser);
+        // then
+        verify(userRepository).update(updatedUser);
     }
-
-    @Test
-    void testUpdateUser() {
-        long userId = 1;
-        User storedUser = new User("stored@test.ru", "pass", "Stored User", true,true,true,true);
-        User updatedUser = new User("updated@test.ru", "pass", "Updated User", true,true,true,true);
-        storedUser.setId(userId);
-        updatedUser.setId(userId);
-
-        try {
-            Mockito.when(userRepository.findById(updatedUser.getId())).thenReturn(storedUser);
-            userService.updateUser(updatedUser, userId);
-            Mockito.verify(userRepository).update(updatedUser, storedUser.getId());
-        } catch(Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    @Test
-    void testUpdateUserThrowsNotFoundException() {
-        long userId = 1;
-        User updatedUser = new User("updated@test.ru", "pass", "Updated User", true,true,true,true);
-        updatedUser.setId(userId);
-        Mockito.when(userRepository.findById(userId)).thenReturn(null);
-        Assertions.assertThrows(NotFoundException.class, () -> userService.updateUser(updatedUser, userId));
-    }
-
 }

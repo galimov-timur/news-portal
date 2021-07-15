@@ -4,28 +4,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Objects;
 
 @Entity
 @Table(name="roles")
 public class Role implements Serializable {
     @Id
     @JsonIgnore
-    @Column(name="id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
     public Role() {
-    }
-
-    public Role(Long id, String name, User user) {
-        this.id = id;
-        this.name = name;
-        this.user = user;
     }
 
     public Role(String name) {
@@ -54,6 +47,19 @@ public class Role implements Serializable {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Role role = (Role) o;
+        return name.equals(role.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 
     @Override

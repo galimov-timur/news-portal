@@ -13,7 +13,6 @@ import java.util.*;
 @Table(name="users")
 public class User implements UserDetails, Serializable {
     @Id
-    @Column(name="id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String email;
@@ -23,8 +22,8 @@ public class User implements UserDetails, Serializable {
     private boolean isAccountNonLocked;
     private boolean isCredentialsNonExpired;
     private boolean isEnabled;
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Role> roles = new ArrayList<>();
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user", orphanRemoval = true)
+    private Set<Role> roles = new HashSet<>();
 
     public User() {
     }
@@ -80,7 +79,7 @@ public class User implements UserDetails, Serializable {
     }
 
     public long getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(long id) {
@@ -103,27 +102,32 @@ public class User implements UserDetails, Serializable {
         this.userName = userName;
     }
 
-    public List<Role> getRoles() {
+    public Set<Role> getRoles() {
         return roles;
     }
 
-    public void setRoles(List<Role> roles) {
+    public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
-
+    /*
     @JsonIgnore
     public Role getRole() {
         return this.roles.get(0);
-    }
+    }*/
 
     public void addRole(Role role) {
         this.roles.add(role);
+        role.setUser(this);
+    }
+    public void removeRole(Role role) {
+        this.roles.remove(role);
+        role.setUser(null);
     }
 
     @Override
     public String toString() {
         return "User{" +
-                "id=" + id +
+                "id=" + this.id +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", userName='" + userName + '\'' +

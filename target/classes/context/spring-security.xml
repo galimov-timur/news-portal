@@ -11,6 +11,7 @@
         <http-basic entry-point-ref="newsportalAuthenticationEntryPoint" />
         <custom-filter before="BASIC_AUTH_FILTER" ref="tokenAuthenticationFilter" />
         <intercept-url pattern="/authenticate" access="permitAll()" method="POST" />
+        <intercept-url pattern="/register" access="permitAll()" method="POST" />
         <intercept-url pattern="/users" access="permitAll()" method="POST" />
         <intercept-url pattern="/news" access="permitAll()" method="GET" />
         <intercept-url pattern="/news/*" access="permitAll()" method="GET" />

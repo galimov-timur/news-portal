@@ -12,9 +12,9 @@ kz/epam/newsportal/filter/TokenAuthenticationFilter.class
 kz/epam/newsportal/resource/NewsMessageSource.class
 kz/epam/newsportal/aspect/LoggingAspect.class
 kz/epam/newsportal/repository/hibernate/RoleRepository.class
-kz/epam/newsportal/controller/I18nController.class
 kz/epam/newsportal/util/NewsportalAuthenticationEntryPoint.class
 kz/epam/newsportal/repository/hibernate/NewsRepository.class
+kz/epam/newsportal/controller/LanguageController.class
 kz/epam/newsportal/controller/UserController.class
 kz/epam/newsportal/exception/NotFoundException.class
 kz/epam/newsportal/model/Role.class

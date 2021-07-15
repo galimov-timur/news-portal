@@ -10,12 +10,10 @@ DROP TABLE IF EXISTS news;
 
 CREATE TABLE IF NOT EXISTS news (
     id BIGSERIAL NOT NULL,
-    user_id BIGINT NOT NULL,
-    title VARCHAR(50) NOT NULL,
+    title VARCHAR(500) NOT NULL,
     createdDetails TIMESTAMPTZ NOT NULL,
-    brief VARCHAR(200) NOT NULL,
-    content VARCHAR(500) NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id),
+    brief VARCHAR(1000) NOT NULL,
+    content VARCHAR(5000) NOT NULL,
     CONSTRAINT pk_news PRIMARY KEY (id)
 );
 
