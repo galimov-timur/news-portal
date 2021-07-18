@@ -1,7 +1,6 @@
 package kz.epam.newsportal.controller;
 
 import kz.epam.newsportal.exception.NotFoundException;
-import kz.epam.newsportal.model.Role;
 import kz.epam.newsportal.model.User;
 import kz.epam.newsportal.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Controller
 public class UserController {

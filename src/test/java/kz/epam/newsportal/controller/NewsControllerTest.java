@@ -7,143 +7,140 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@Transactional
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(locations = {"classpath:context/spring-mvc-test.xml",
-        "classpath:context/spring-mvc.xml","classpath:context/spring-root.xml", "classpath:context/spring-security.xml"})
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@ContextConfiguration(locations = {"classpath:context/spring-mvc.xml",
+        "classpath:context/spring-root.xml", "classpath:context/spring-security.xml",
+        "classpath:context/spring-repository.xml"})
+
 public class NewsControllerTest {
 
     private MockMvc mockMvc;
-    private News mockNewsItem;
     @Autowired
-    INewsRepository newsRepositoryMock;
+    private INewsRepository newsRepository;
     @Autowired
     private NewsController newsController;
-
-    private static final int NEWS_COUNT = 5;
 
     @BeforeEach
     void setup() {
         this.mockMvc = MockMvcBuilders.standaloneSetup(newsController).build();
-        this.mockNewsItem = createMockNews(1).get(0);
     }
 
     @Test
-    public void shouldReturnNewsList() throws Exception {
-        List<News> mockNewsList = createMockNews(NEWS_COUNT);
-        when(newsRepositoryMock.findAll()).thenReturn(mockNewsList);
-
-        ResultActions resultActions = mockMvc.perform(get("/news"))
+    public void getNewsShouldReturnNewsList() throws Exception {
+        // Initialize mock news
+        createMockNews(2);
+        // Execute get request
+        mockMvc.perform(get("/news"))
+                // Validate status, list size and content type
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-                .andExpect(jsonPath("$", Matchers.hasSize(NEWS_COUNT)));
-
-        assertMockNews(resultActions, mockNewsList);
+                .andExpect(jsonPath("$", Matchers.hasSize(2)))
+                // Validate returned fields
+                .andExpect(jsonPath("$[1].id", is(2)))
+                .andExpect(jsonPath("$[1].title", is("Title 2")))
+                .andExpect(jsonPath("$[1].brief", is("Brief 2")))
+                .andExpect(jsonPath("$[1].content", is("Content 2")));
     }
 
-    @Test
-    public void shouldReturnNewsItemById() throws Exception {
-        when(newsRepositoryMock.findById(mockNewsItem.getId())).thenReturn(mockNewsItem);
 
-        ResultActions resultActions = mockMvc.perform(get("/news/{id}", mockNewsItem.getId()))
+    @Test
+    public void getNewsItemShouldReturnNewsItem() throws Exception {
+        // Initialize mock news
+        createMockNews(1);
+        // Execute get request
+        mockMvc.perform(get("/news/{id}", 1))
+                // Validate status and content type
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE));
-
-        assertMockNewsItem(resultActions, mockNewsItem, true);
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+                // Validate returned fields
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.title", is("Title 1")))
+                .andExpect(jsonPath("$.brief", is("Brief 1")))
+                .andExpect(jsonPath("$.content", is("Content 1")));
     }
 
-    @Test
-    public void shouldCreateNewsItem() throws Exception {
-        when(newsRepositoryMock.save(Mockito.any(News.class))).thenReturn(mockNewsItem.getId());
-        String locationHeader = String.format("/news/%d", mockNewsItem.getId());
 
-        mockMvc.perform(post("/news").contentType(MediaType.APPLICATION_JSON).content(asJsonString(mockNewsItem)))
+    @Test
+    public void createNewsItemShouldReturnStatusCreatedAndLocation() throws Exception {
+        // Create mock news item
+        News newsItem = new News("Title", null,"Brief", "Content");
+        // Execute the post request
+        mockMvc.perform(post("/news")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(newsItem)))
+                // Validate status
                 .andExpect(status().isCreated())
-                .andExpect(header().string("location", containsString(locationHeader)));
+                // Validate headers
+                .andExpect(header().string(HttpHeaders.LOCATION, "http://localhost/news/1"));
     }
 
     @Test
-    public void shouldUpdateNewsItem() throws Exception {
-        when(newsRepositoryMock.findById(mockNewsItem.getId())).thenReturn(mockNewsItem);
-        doNothing().when(newsRepositoryMock).update(Mockito.any(News.class));
-
-        mockMvc.perform(put("/news/{id}", mockNewsItem.getId())
-                .contentType(MediaType.APPLICATION_JSON).content(asJsonString(mockNewsItem)))
+    public void updateNewsItemShouldReturnNoContent() throws Exception {
+        // Initialize mock news
+        createMockNews(2);
+        // Create mock news item
+        News newsItem = new News("Title", null,"Brief", "Content");
+        // Execute the post request
+        mockMvc.perform(put("/news/{id}", 1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(newsItem)))
+                // Validate status
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void updateNewsItemShouldReturnNotFound() throws Exception {
-        when(newsRepositoryMock.findById(mockNewsItem.getId())).thenReturn(null);
-        doNothing().when(newsRepositoryMock).update(Mockito.any(News.class));
-
-        mockMvc.perform(put("/news/{id}", mockNewsItem.getId())
-                .contentType(MediaType.APPLICATION_JSON).content(asJsonString(mockNewsItem)))
+        // Create mock news item
+        News newsItem = new News("Title", null,"Brief", "Content");
+        // Execute the post request
+        mockMvc.perform(put("/news/{id}", 1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(newsItem)))
+                // Validate status
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    public void shouldDeleteNewsItem() throws Exception {
-        when(newsRepositoryMock.findById(mockNewsItem.getId())).thenReturn(mockNewsItem);
-        doNothing().when(newsRepositoryMock).delete(Mockito.any(News.class));
-
-        mockMvc.perform(delete("/news/{id}", mockNewsItem.getId()))
+    public void deleteNewsItemShouldReturnNoContent() throws Exception {
+        // Setup mock news
+        createMockNews(2);
+        // Execute delete request
+        mockMvc.perform(delete("/news/{id}", 1))
+                // Validate status
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void deleteNewsItemShouldReturnNotFound() throws Exception {
-        when(newsRepositoryMock.findById(mockNewsItem.getId())).thenReturn(null);
-        doNothing().when(newsRepositoryMock).delete(Mockito.any(News.class));
-
-        mockMvc.perform(delete("/news/{id}", mockNewsItem.getId()))
+        // Execute delete request
+        mockMvc.perform(delete("/news/{id}", 1))
+                // Validate status
                 .andExpect(status().isNotFound());
     }
 
     // Helper methods
-    private List<News> createMockNews(int count) {
-        List<News> newsList = new ArrayList<>();
+    private void createMockNews(int count) {
         for (int i = 1; i <= count; i++) {
             News newsItem = new News("Title " + i, null,"Brief " + i, "Content " + i);
             newsItem.setId((long) i);
-            newsList.add(newsItem);
+            newsRepository.save(newsItem);
         }
-        return newsList;
-    }
-
-    private void assertMockNews(ResultActions actions, List<News> newsList) throws Exception {
-        for (News mockNews : newsList) {
-            assertMockNewsItem(actions, mockNews, false);
-        }
-    }
-
-    private void assertMockNewsItem(ResultActions actions, News mockNewsItem, boolean isSingle) throws Exception {
-        String path = null;
-        if (isSingle) {
-            path = "$";
-        } else {
-            path = String.format("$[%d]", (mockNewsItem.getId() - 1));
-        }
-        actions.andExpect(jsonPath(path + ".id", is((int) mockNewsItem.getId())));
-        actions.andExpect(jsonPath(path + ".title", is("Title " + mockNewsItem.getId())));
-        actions.andExpect(jsonPath(path + ".brief", is("Brief " + mockNewsItem.getId())));
-        actions.andExpect(jsonPath(path + ".content", is("Content " + mockNewsItem.getId())));
     }
 
     public static String asJsonString(final Object obj) {
